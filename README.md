@@ -23,9 +23,54 @@ verificar que los directorios (recursivo) tengan permisos totales (rw) para u-g-
 
 crear usuario y configurarlo en parameters.yml o parameters_dev.yml para entorno dev
 
-generar BD
+generate BD
+
 >php bin/console doctrine:database:create --env=dev
 
+If you need re-generate database
+
+> php bin/console doctrine:database:drop --force
+
+> php bin/console doctrine:database:create
+
+Check schema tables vs Entity classes
+
+> php bin/console doctrine:schema:validate
+
+>> [Mapping]  OK - The mapping files are correct.
+
+>> [Database] FAIL - The database schema is not in sync with the current mapping file.
+
+Then, sync tables from proyect entities (powered by doctrine)
+
+> php bin/console doctrine:schema:update --force
+
+>> Updating database schema...
+
+>> Database schema updated successfully! "1" query was executed
+
+
+Install via composer doctrine-fixtures-bundle for devel environment , needed for pre-populate tables
+
+> composer require --dev doctrine/doctrine-fixtures-bundle  
+
+NOTE: if you have xdebug enable on your PHP, and get an fatal error "proc_open(): fork failed - Cannot allocate memory", please disable xdebug (http://stackoverflow.com/questions/8754826/how-to-disable-xdebug ) while composer installs the asset
+
+Load Fixtures
+
+> php bin/console doctrine:fixtures:load --fixtures=src/IntrawayBundle/DataFixtures
+
+>> Careful, database will be purged. Do you want to continue y/N ?y
+
+>> purging database
+
+>> loading Intraway\DataFixtures\ORM\LoadUserData
+
+Install via composer serializer, used for Json serialize/deserialize and automapping class
+
+> composer require symfony/serializer
+
+  
 ## API Reference
 
 Depending on the size of the project, if it is small and simple enough the reference docs can be added to the README. For medium size to larger projects it is important to at least provide a link to where the API reference docs live.
