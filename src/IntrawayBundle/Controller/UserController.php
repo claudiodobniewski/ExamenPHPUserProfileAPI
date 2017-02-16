@@ -3,8 +3,9 @@
 namespace IntrawayBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-//use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use IntrawayBundle\Entity as ibe;
@@ -27,16 +28,17 @@ class UserController extends Controller
     /**
      * 
      * 
-     * @Route("/userProfile/get", name="GetUser")
+     * @Route("/userProfile/{user_id}", name="GetUser")
      * @Method({"GET"})
      */
-    public function getAction()
+    public function getAction($user_id=0)
     {
         $logger = $this->get('logger');
+        $respStatus = Response::HTTP_INTERNAL_SERVER_ERROR;
         $request = Request::createFromGlobals();
         //$get_id = $request->query->get('user_id');
+        /*
         $content = $request->getContent();
-        
         $logger->info(sprintf('%s:%s [Body:%s]',__CLASS__,__FUNCTION__,$content ));
         
         $encoders = array(new JsonEncoder());
@@ -46,53 +48,158 @@ class UserController extends Controller
         
         //$obj = $serializer->deserialize($content,User::class,'json');
         $obj = json_decode($content);
-        
+        */
         //$logger->info(sprintf('%s:%s %s [Id:%s] [Name:%s]',__CLASS__,__FUNCTION__,'GET ACTION',$obj->id,$obj->name ));
         
         
-        if($obj  && filter_var($obj->id , FILTER_VALIDATE_INT) && $obj->id > 0 ){
-            $logger->debug(sprintf('%s:%s JSON DECODED Id:%s',__CLASS__,__FUNCTION__,$obj->id));
+        if(filter_var($user_id , FILTER_VALIDATE_INT) && $user_id > 0 ){
+            $logger->debug(sprintf('%s:%s RECEIVED INT [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+            /** var ibe\User $object */
             $user = $this->getDoctrine()
             ->getRepository('UserBundle:User')
-            ->find($obj->id);
+            ->find($user_id);
             
             if (!$user) {
-                $logger->debug(sprintf('%s:%s JSON DECODED BUT Id:%s NOT FOUND',__CLASS__,__FUNCTION__,$obj->id));
+                $logger->error(sprintf('%s:%s NOT FOUND [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
                 /*
                 throw $this->createNotFoundException(
                     'No product found for id '.$user_id
                     );
                     */
-                $user = new ibe\User();
+                $respStatus = Response::HTTP_NO_CONTENT;
+                $data= array('message' => sprintf('NOT FOUND [Id:%s]',$user_id) );
             }else{
-                $logger->debug(sprintf('%s:%s JSON DECODED AND Id:%s HAS FOUND %s',__CLASS__,__FUNCTION__,$obj->id,$user->getName()));
+                $logger->debug(sprintf('%s:%s HAS FOUND [Id:%s] [Name:%s]',__CLASS__,__FUNCTION__,$user->getId(),$user->getName()));
+                $respStatus = Response::HTTP_OK;
+                $data = array(
+                    'id'=> $user->getId(),
+                    'name' => $user->getName(),
+                    'email' => $user->getEmail(),
+                    'imageUrl' => $user->getImageUrl()
+                );
             }
         }else{
-            $logger->debug(sprintf('%s:%s JSON HASN\'T DECODED [Body:%s]',__CLASS__,__FUNCTION__,$content));
-            $user = new ibe\User();
+            $logger->error(sprintf('%s:%s SORRY, BUT ID IS INVALID [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+            $respStatus = Response::HTTP_PRECONDITION_FAILED;
+            $data= array('message' => sprintf('SORRY, BUT ID IS INVALID [Id:%s]',$user_id) );
         }
         
-        return $this->render('UserBundle:Default:index.html.twig',array('output' => $serializer->serialize($user, 'json') ));
+        
+        //return $this->render('UserBundle:Default:index.html.twig',array('output' => $serializer->serialize($object, 'json') ));
+        return new JsonResponse($data,$respStatus);
     }
     
     /**
-     * @Route("/userProfile/delete/{id}", name="DeleteUser")
+     * @Route("/userProfile/{user_id}", name="DeleteUser")
+     * @Method({"DELETE"})
      */
-    public function deleteAction($id = 0)
+    public function deleteAction($user_id = 0)
     {
         $logger = $this->get('logger');
-        $logger->info(sprintf('%s:%s %s %s',__CLASS__,__FUNCTION__,'DELETE ACTION',$id));
-        return $this->render('UserBundle:Default:index.html.twig');
+        $respStatus = Response::HTTP_INTERNAL_SERVER_ERROR;
+        $request = Request::createFromGlobals();
+        
+        if(filter_var($user_id , FILTER_VALIDATE_INT) && $user_id > 0 ){
+            $logger->debug(sprintf('%s:%s RECEIVED INT [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+            /** var IntrawayBundle\Entity\User $object */
+            $user = $this->getDoctrine()
+            ->getRepository('UserBundle:User')
+            ->find($user_id);
+            
+            if (!$user) {
+                $logger->error(sprintf('%s:%s NOT FOUND RECORD [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+                /*
+                throw $this->createNotFoundException(
+                    'No product found for id '.$user_id
+                    );
+                    */
+                $respStatus = Response::HTTP_NOT_FOUND;
+                $data = array(
+                    'message' => sprintf('NOT FOUND RECORD [Id:%s]',$user_id) 
+                );
+            }else{
+                $em = $this->getDoctrine()->getManager();
+                $em->remove($user);
+                $em->flush();
+                $logger->debug(sprintf('%s:%s HAS FOUND AND DELETED RECORD [Id:%s] [Name:%s]',__CLASS__,__FUNCTION__,$user->getId(),$user->getName()));
+                $respStatus = Response::HTTP_OK;
+                
+                $data = array(
+                    'id'=> $user->getId(),
+                    'name' => $user->getName(),
+                    'email' => $user->getEmail(),
+                    'imageUrl' => $user->getImageUrl()
+                );
+            }
+        }else{
+            $logger->error(sprintf('%s:%s SORRY, BUT ID IS INVALID [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+            $respStatus = Response::HTTP_PRECONDITION_FAILED;
+            $data= array(
+                'message' => sprintf('SORRY, BUT ID IS INVALID [Id:%s]',$user_id) 
+            );
+        }
+        
+        return new JsonResponse($data,$respStatus);
     }
     
     /**
-     * @Route("/userProfile/edit/{id}", name="EditUser")
+     * @Route("/userProfile/{user_id}", name="EditUser")
+     * @Method({"PUT"})
      */
-    public function editAction($id = 0)
+    public function editAction($user_id = 0)
     {
         $logger = $this->get('logger');
-        $logger->info(sprintf('%s:%s %s %s',__CLASS__,__FUNCTION__,'EDIT ACTION',$id));
-        return $this->render('UserBundle:Default:index.html.twig');
+        $respStatus = Response::HTTP_INTERNAL_SERVER_ERROR;
+        $request = Request::createFromGlobals();
+        
+        $putParams = $request->query->all();
+        
+        $name = ( array_key_exists('name',$putParams) &&  !empty($putParams['name']) ? $putParams['name'] : false );
+        $email = ( array_key_exists('email',$putParams) &&  !empty($putParams['email']) ? $putParams['email'] : false );
+        $imageUrl = ( array_key_exists('imageUrl',$putParams) &&  !empty($putParams['imageUrl']) ? $putParams['imageUrl'] : false );
+        
+        
+        if(filter_var($user_id , FILTER_VALIDATE_INT) && $user_id > 0 ){
+            $logger->debug(sprintf('%s:%s RECEIVED INT [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+            /** var IntrawayBundle\Entity\User $object */
+            $user = $this->getDoctrine()
+            ->getRepository('UserBundle:User')
+            ->find($user_id);
+            
+            if (!$user) {
+                $logger->error(sprintf('%s:%s NOT FOUND RECORD [Id:%s] CREATE NEW',__CLASS__,__FUNCTION__,$user_id));
+                /* @TODO logic for iNSERT new RECORD whit ID = $user_id */
+                $respStatus = Response::HTTP_NOT_FOUND;
+                $data = array(
+                    'message' => sprintf('NOT FOUND RECORD [Id:%s]',$user_id) 
+                );
+                
+            }else{
+                $em = $this->getDoctrine()->getManager();
+                if($name) $user->setName($name);
+                if($email) $user->setEmail($email);
+                if($imageUrl) $user->setImageUrl($imageUrl);
+                $em->persist($user);
+                $em->flush();
+                $logger->debug(sprintf('%s:%s HAS FOUND AND UPDATED RECORD [Id:%s] [Name:%s]',__CLASS__,__FUNCTION__,$user->getId(),$user->getName()));
+                $respStatus = Response::HTTP_OK;
+                
+                $data = array(
+                    'id'=> $user->getId(),
+                    'name' => $user->getName(),
+                    'email' => $user->getEmail(),
+                    'imageUrl' => $user->getImageUrl()
+                );
+            }
+        }else{
+            $logger->error(sprintf('%s:%s SORRY, BUT ID IS INVALID [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+            $respStatus = Response::HTTP_PRECONDITION_FAILED;
+            $data= array(
+                'message' => sprintf('SORRY, BUT ID IS INVALID [Id:%s]',$user_id) 
+            );
+        }
+        
+        return new JsonResponse($data,$respStatus);
     }
     
     /**
