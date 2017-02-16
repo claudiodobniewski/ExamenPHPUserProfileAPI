@@ -15,9 +15,11 @@ A short description of the motivation behind the creation and maintenance of the
 
 ## Installation
 
+Develope on PHP 5.6.21 and Symfony 3.2.3, ORM Doctrine
+
 Provide code examples and explanations of how to get the project.
 
-instalar desde GIT - command line
+Checkout (clone) from  GitHub - command line
 
 verificar que los directorios (recursivo) tengan permisos totales (rw) para u-g-o
 
@@ -82,6 +84,8 @@ Describe and show how to run the tests with code examples.
 ## Contributors
 
 Let people know how they can dive into the project, include important links to things like issue trackers, irc, twitter accounts if applicable.
+
+About REST API http://asiermarques.com/2013/conceptos-sobre-apis-rest/
 
 ## License
 
