@@ -23,7 +23,7 @@ class LoadFile{
      * @var String
      * @return \Tools\file\upload\LoadFile
      */
-    private $fileName = null;
+    private $fileName = false;
     
     /**
      * Error message, String value only if have an error, else false.
@@ -81,7 +81,7 @@ class LoadFile{
      * @param String $filename
      * @return \Tools\file\upload\LoadFile
      */
-    protected function setFilename( $filename){
+    public function setFilename( $filename){
     
         $this->fileName = $filename;
     
@@ -138,13 +138,18 @@ class LoadFile{
         
         if(!$this->isErr() && !is_null($this->url) && !is_null($this->uploadFolder) ){
             
-            $this->setFilename( md5(uniqid()).'.'.pathinfo($this->getUrl(), PATHINFO_EXTENSION) );
-            
+            if(!$this->getFilename())
+                $this->setFilename( md5(uniqid()).'.'.pathinfo($this->getUrl(), PATHINFO_EXTENSION) );
+            else{
+                $this->setFilename($this->getFilename().'.'.pathinfo($this->getUrl(), PATHINFO_EXTENSION));
+            }
+                
             $upload_folder_ready = is_dir($this->getUploadFoler());
             //echo $this->getUploadFoler();exit();
             if(!$upload_folder_ready){
                 $upload_folder_ready = mkdir($this->getUploadFoler(),0755, true);
             }
+                
             
             if(
                 $upload_folder_ready &&
