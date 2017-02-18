@@ -8,22 +8,36 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use IntrawayBundle\Entity as ibe;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use IntrawayBundle\Entity as ibe;
 use IntrawayBundle\Tools\file\upload as tfu;
+use IntrawayBundle\Entity\User;
+use IntrawayBundle\Tools\validation\PatternValidation;
+use IntrawayBundle\Tools\ControllerHelper;
 
 class UserController extends Controller
 {
+    private $trxId;
+    
+    public function __construct(){
+        
+        $this->trxId = ControllerHelper::getRandomId();
+    }
+    
     /**
-     * @Route("/userProfile/new", name="newUser")
+     * @Route("/userProfile/{user_id}", name="setUser")
+     * @Method({"POST"})
      */
     public function newAction()
     {
         $logger = $this->get('logger');
-        $logger->error(sprintf('%s:%s %s',__CLASS__,__FUNCTION__,"NEW ACTION DOESNT WORK"));
-        return $this->render('UserBundle:Default:new.html.twig', array());
+        
+        $logger->error(sprintf('%s:%s NEW USER OP NOT ALLOWED [Id:%s]',__CLASS__,__FUNCTION__,$this->trxId ));
+        $respStatus = Response::HTTP_METHOD_NOT_ALLOWED;
+        $data= array('message' => 'NEW USER OP NOT ALLOWED' );
+        return new JsonResponse($data,$respStatus);
     }
     
     /**
@@ -54,39 +68,36 @@ class UserController extends Controller
         
         
         if(filter_var($user_id , FILTER_VALIDATE_INT) && $user_id > 0 ){
-            $logger->debug(sprintf('%s:%s RECEIVED INT [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+            $logger->debug(sprintf('%s:%s RECEIVED INT [Id:%s] [UserdId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
             /** var ibe\User $object */
             $user = $this->getDoctrine()
             ->getRepository('UserBundle:User')
             ->find($user_id);
             
             if (!$user) {
-                $logger->error(sprintf('%s:%s NOT FOUND [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+                $logger->error(sprintf('%s:%s NOT FOUND [Id:%s] [UserId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
                 /*
                 throw $this->createNotFoundException(
                     'No product found for id '.$user_id
                     );
                     */
                 $respStatus = Response::HTTP_NO_CONTENT;
-                $data= array('message' => sprintf('NOT FOUND [Id:%s]',$user_id) );
+                $data= array('message' => sprintf('NOT FOUND [Id:%s] [UserId:%s]',$this->trxId,$user_id) );
             }else{
-                $logger->debug(sprintf('%s:%s HAS FOUND [Id:%s] [Name:%s]',__CLASS__,__FUNCTION__,$user->getId(),$user->getName()));
+                $logger->debug(sprintf('%s:%s HAS FOUND [Id:%s] [UserId:%s] [Name:%s]',__CLASS__,__FUNCTION__,$user->getId(),$this->trxId,$user->getName()));
                 $respStatus = Response::HTTP_OK;
                 $data = array(
                     'id'=> $user->getId(),
                     'name' => $user->getName(),
                     'email' => $user->getEmail(),
-                    'Image' => $user->getImageUrl()
+                    'Image' => $this->getUserImageFullUrl($request, $user->getImage())
                 );
             }
         }else{
-            $logger->error(sprintf('%s:%s SORRY, BUT ID IS INVALID [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+            $logger->error(sprintf('%s:%s SORRY, BUT ID IS INVALID [Id:%s] [UserId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
             $respStatus = Response::HTTP_PRECONDITION_FAILED;
-            $data= array('message' => sprintf('SORRY, BUT ID IS INVALID [Id:%s]',$user_id) );
+            $data= array('message' => sprintf('SORRY, BUT ID IS INVALID [Id:%s] [UserId:%s]',$this->trxId,$user_id) );
         }
-        
-        
-        //return $this->render('UserBundle:Default:index.html.twig',array('output' => $serializer->serialize($object, 'json') ));
         return new JsonResponse($data,$respStatus);
     }
     
@@ -101,14 +112,14 @@ class UserController extends Controller
         $request = Request::createFromGlobals();
         
         if(filter_var($user_id , FILTER_VALIDATE_INT) && $user_id > 0 ){
-            $logger->debug(sprintf('%s:%s RECEIVED INT [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+            $logger->debug(sprintf('%s:%s RECEIVED INT [Id:%s] [UserId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
             /** var IntrawayBundle\Entity\User $object */
             $user = $this->getDoctrine()
             ->getRepository('UserBundle:User')
             ->find($user_id);
             
             if (!$user) {
-                $logger->error(sprintf('%s:%s NOT FOUND RECORD [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+                $logger->error(sprintf('%s:%s NOT FOUND RECORD [Id:%s] [UserId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
                 /*
                 throw $this->createNotFoundException(
                     'No product found for id '.$user_id
@@ -116,27 +127,28 @@ class UserController extends Controller
                     */
                 $respStatus = Response::HTTP_NOT_FOUND;
                 $data = array(
-                    'message' => sprintf('NOT FOUND RECORD [Id:%s]',$user_id) 
+                    'message' => sprintf('NOT FOUND RECORD [Id:%s] [UserID:%s]',$this->trxId,$user_id) 
                 );
             }else{
                 $em = $this->getDoctrine()->getManager();
                 $em->remove($user);
                 $em->flush();
-                $logger->debug(sprintf('%s:%s HAS FOUND AND DELETED RECORD [Id:%s] [Name:%s]',__CLASS__,__FUNCTION__,$user->getId(),$user->getName()));
+                $logger->debug(sprintf('%s:%s HAS FOUND AND DELETED RECORD [Id:%s] [UserId:%s] [Name:%s] [Email:%s] [Image:%s]',__CLASS__,__FUNCTION__,
+                    $this->trxId,$user->getId(),$user->getName(),$user->getEmail(),$user->getImage()));
                 $respStatus = Response::HTTP_OK;
                 
                 $data = array(
                     'id'=> $user->getId(),
                     'name' => $user->getName(),
                     'email' => $user->getEmail(),
-                    'Image' => $user->getImageUrl()
+                    'Image' => $this->getUserImageFullUrl($request, $user->getImage())
                 );
             }
         }else{
-            $logger->error(sprintf('%s:%s SORRY, BUT ID IS INVALID [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+            $logger->error(sprintf('%s:%s SORRY, BUT ID IS INVALID [Id:%s] [UserId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
             $respStatus = Response::HTTP_PRECONDITION_FAILED;
             $data= array(
-                'message' => sprintf('SORRY, BUT ID IS INVALID [Id:%s]',$user_id) 
+                'message' => sprintf('SORRY, BUT ID IS INVALID [Id:%s] [UserId:%s]',$this->trxId,$user_id) 
             );
         }
         
@@ -161,48 +173,57 @@ class UserController extends Controller
         
         
         if(filter_var($user_id , FILTER_VALIDATE_INT) && $user_id > 0 ){
-            $logger->debug(sprintf('%s:%s RECEIVED INT [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+            $logger->debug(sprintf('%s:%s RECEIVED INT [Id:%s] [UserId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
             /** var IntrawayBundle\Entity\User $object */
             $user = $this->getDoctrine()
             ->getRepository('UserBundle:User')
             ->find($user_id);
             
             if (!$user) {
-                $logger->error(sprintf('%s:%s NOT FOUND RECORD [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+                $logger->error(sprintf('%s:%s NOT FOUND RECORD [Id:%s] [UserId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
                
                 $respStatus = Response::HTTP_NOT_FOUND;
                 $data = array(
-                    'message' => sprintf('NOT FOUND RECORD [Id:%s]',$user_id) 
+                    'message' => sprintf('NOT FOUND RECORD [Id:%s] [UserId:%s]',$this->trxId,$user_id) 
                 );
                 
             }else{
-                /* @TODO logic for iNSERT new RECORD whit ID = $user_id
-                 * Hay que implemetar
-                 * VALIDACION URL  email e IMAGENES (PATTERN y disponibilidad)
-                 * UPLOAD de la imagen a disco (tipo de imagen, tamaño, guardado en disco y asignacion del fullpath
-                 *
+                
+                /**
+                 * Validate long of  new name, at least 10 chars
                  */
+                if($name && strlen($name) >= 10){
+                    $user->setName($name);
+                }else{
+                    $logger->warn(sprintf('%s:%s BAD LONG OF NAME (at least 10 chars long) [Id:%s] [Name:%s]',__CLASS__,__FUNCTION__,$this->trxId,$name));;
+                }
+                /**
+                 * Validate format of new email
+                 */
+                if($email && PatternValidation::validateEmailPattern($email)) {
+                    $user->setEmail($email);
+                }else{
+                    $logger->warn(sprintf('%s:%s BAD FORMAT OF EMAIL [Id:%s] [UserId:%s] [Email:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user->getId(),$email));
+                }
+                //if($imageUrl) $user->setImage($imageUrl);
                 $em = $this->getDoctrine()->getManager();
-                if($name) $user->setName($name);
-                if($email) $user->setEmail($email);
-                if($imageUrl) $user->setImageUrl($imageUrl);
                 $em->persist($user);
                 $em->flush();
-                $logger->debug(sprintf('%s:%s HAS FOUND AND UPDATED RECORD [Id:%s] [Name:%s]',__CLASS__,__FUNCTION__,$user->getId(),$user->getName()));
+                $logger->debug(sprintf('%s:%s HAS FOUND AND UPDATED RECORD [Id:%s] [UserId:%s] [Name:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user->getId(),$user->getName()));
                 $respStatus = Response::HTTP_OK;
                 
                 $data = array(
                     'id'=> $user->getId(),
                     'name' => $user->getName(),
                     'email' => $user->getEmail(),
-                    'Image' => $user->getImageUrl()
+                    'Image' => $this->getUserImageFullUrl($request,$user->getImage())
                 );
             }
         }else{
-            $logger->error(sprintf('%s:%s SORRY, BUT ID IS INVALID [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+            $logger->error(sprintf('%s:%s SORRY, BUT USER ID IS INVALID [Id:%s] [UserId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
             $respStatus = Response::HTTP_PRECONDITION_FAILED;
             $data= array(
-                'message' => sprintf('SORRY, BUT ID IS INVALID [Id:%s]',$user_id) 
+                'message' => sprintf('SORRY, BUT ID USER IS INVALID [Id:%s] [USerId:%s]',$this->trxId,$user_id) 
             );
         }
         
@@ -226,7 +247,7 @@ class UserController extends Controller
         
         
         if(filter_var($user_id , FILTER_VALIDATE_INT) && $user_id > 0 ){
-            $logger->debug(sprintf('%s:%s RECEIVED INT [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+            $logger->debug(sprintf('%s:%s RECEIVED INT [Id:%s] [UserID:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
             
             
             /** @var src/IntrawayBundle\Entity\User $user */
@@ -235,36 +256,35 @@ class UserController extends Controller
             ->find($user_id);
             //var_dump($user,$imageUrl);
             if (!$user ) {
-                $logger->error(sprintf('%s:%s NOT FOUND RECORD [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+                $logger->error(sprintf('%s:%s NOT FOUND RECORD [Id:%s] [UserId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
                 $respStatus = Response::HTTP_NOT_FOUND;
                 $data = array(
-                    'message' => sprintf('NOT FOUND RECORD [Id:%s]',$user_id) 
+                    'message' => sprintf('NOT FOUND RECORD [Id:%s] [USerId:%s]',$this->trxId,$user_id) 
                 );
                 
             }else if (!$imageUrl) {
-                $logger->error(sprintf('%s:%s NOT FOUND PARAM "imageurl" [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+                $logger->error(sprintf('%s:%s NOT FOUND PARAM "imageurl" [Id:%s] [UserId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
                 $respStatus = Response::HTTP_PRECONDITION_FAILED;
                 $data = array(
-                    'message' => sprintf('NOT FOUND PARAM "imageurl" [Id:%s]',$user_id) 
+                    'message' => sprintf('NOT FOUND PARAM "imageurl" [Id:%s] [UserId:%s]',$this->trxId,$user_id) 
                 );
                 
             }else{
-                $logger->debug(sprintf('%s:%s PRE-PROCESS UPLOAD [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+                $logger->debug(sprintf('%s:%s PRE-PROCESS UPLOAD [Id:%s] [UserId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
                 /* @TODO logic for iNSERT new RECORD whit ID = $user_id
                  * Hay que implemetar borrado de la imagen anterior si se reemplaza
                  */
                 
-                
-                
                 $em = $this->getDoctrine()->getManager();
-                
                 
                 /** UPLOAD IMAGE FROM URL **/
                 
+                $web_basedir = $this->container->getParameter('base_web_rootdir');
                 $upload_folder = $this->container->getParameter('upload_files');
                 
+                
                 $lif = new tfu\LoadImageFile();
-                $lif->setUploadForlder($upload_folder);
+                $lif->setUploadForlder($web_basedir.$upload_folder);
                 $lif->setUrl($imageUrl);
                 
                 $lif->loadFile();
@@ -273,40 +293,68 @@ class UserController extends Controller
                 
                 if( !$lif->isErr() ){
                     
-                    $oldImageUrl = $user->getImageUrl() ? $user->getImageUrl() : null;
-                    $oldImagePath = $user->getImagePath() ? $user->getImagePath() : null;
-                    $user->setImageUrl($imageUrl);
-                    $user->setImagePath($lif->getFilename());
+                    $oldImage = $user->getImage() ? $user->getImage() : null;
+                    //$baseurl = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath();
+                    $image_local_url = $this->getUserImageFullUrl($request,$lif->getFilename()) ;
+                    $user->setImage($lif->getFilename());
                     $em->persist($user);
                     $em->flush();
-                    $oldFullPath=$upload_folder.DIRECTORY_SEPARATOR.$oldImagePath;
-                    file_exists($oldFullPath) && unlink($upload_folder.DIRECTORY_SEPARATOR.$oldImagePath);
+                    $oldFullPath=$this->getUserImageFullpath($oldImage);
                     
-                    $logger->debug(sprintf('%s:%s HAS FOUND AND UPDATED RECORD [Id:%s] [File:%s] [Url:%s]',__CLASS__,__FUNCTION__,$user->getId(),$lif->getFilename(),$lif->getUrl()));
+                    file_exists($oldImage) && unlink($oldImage);
+                    
+                    $logger->debug(sprintf('%s:%s HAS FOUND AND UPDATED RECORD [Id:%s] [UserId:%s] [File:%s] [Url:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user->getId(),$lif->getFilename(),$lif->getUrl()));
                     $respStatus = Response::HTTP_OK;
                     
+                    //var_dump($this->getUserImageFullpath($lif->getFilename()),$this->getUserImageFullUrl($request,$lif->getFilename()));
                     $data = array(
                         'id'=> $user->getId(),
                         'name' => $user->getName(),
                         'email' => $user->getEmail(),
-                        'Image' => $user->getImageUrl()
+                        'Image' => $this->getUserImageFullUrl($request,$lif->getFilename()) // $user->getImageUrl()
                     );
                 }else{
-                    $logger->error(sprintf('%s:%s FILE UPLOAD ERROR [Id:%s] [ErrMsg:%s]',__CLASS__,__FUNCTION__,$user_id,$lif->getErr()));
+                    $logger->error(sprintf('%s:%s FILE UPLOAD ERROR [Id:%s] [UserID:%s] [ErrMsg:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id,$lif->getErr()));
                     $respStatus = Response::HTTP_INTERNAL_SERVER_ERROR;
                     $data= array(
-                        'message' => sprintf('SORRY, BUT ID IS INVALID [Id:%s]',$user_id)
+                        'message' => sprintf('SORRY, BUT ID IS INVALID [Id:%s] [UserId:%s]',$this->trxId,$user_id)
                     );
                 }
             }
         }else{
-            $logger->error(sprintf('%s:%s SORRY, BUT ID IS INVALID [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+            $logger->error(sprintf('%s:%s SORRY, BUT ID IS INVALID [Id:%s] [UserId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
             $respStatus = Response::HTTP_PRECONDITION_FAILED;
             $data= array(
-                'message' => sprintf('SORRY, BUT ID IS INVALID [Id:%s]',$user_id) 
+                'message' => sprintf('SORRY, BUT ID IS INVALID [Id:%s] [UserId:%s]',$this->trxId,$user_id) 
             );
         }
         
         return new JsonResponse($data,$respStatus);
+    }
+    
+    /**
+     * 
+     * @param string $imageFilename
+     * @return string
+     */
+    protected function getUserImageFullpath($imageFilename){
+        
+        $web_basedir = $this->container->getParameter('base_web_rootdir');
+        $upload_folder = $this->container->getParameter('upload_files');
+        
+        return $web_basedir.$upload_folder.$imageFilename;
+    }
+    
+    /**
+     * 
+     * @param Request $request
+     * @param string $imageFilename
+     * @return string
+     */
+    protected function getUserImageFullUrl(Request $request,$imageFilename){
+        
+        $baseurl = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath();
+        $upload_folder = $this->container->getParameter('upload_files');
+        return $baseurl.$upload_folder.$imageFilename;
     }
 }
