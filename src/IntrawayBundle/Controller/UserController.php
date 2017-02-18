@@ -245,7 +245,6 @@ class UserController extends Controller
         
         $imageUrl = ( array_key_exists('imageUrl',$putParams) &&  !empty($putParams['imageUrl']) ? $putParams['imageUrl'] : false );
         
-        
         if(filter_var($user_id , FILTER_VALIDATE_INT) && $user_id > 0 ){
             $logger->debug(sprintf('%s:%s RECEIVED INT [Id:%s] [UserID:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
             
@@ -254,7 +253,7 @@ class UserController extends Controller
             $user = $this->getDoctrine()
             ->getRepository('UserBundle:User')
             ->find($user_id);
-            //var_dump($user,$imageUrl);
+            
             if (!$user ) {
                 $logger->error(sprintf('%s:%s NOT FOUND RECORD [Id:%s] [UserId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
                 $respStatus = Response::HTTP_NOT_FOUND;
@@ -286,22 +285,30 @@ class UserController extends Controller
                 $lif = new tfu\LoadImageFile();
                 $lif->setUploadForlder($web_basedir.$upload_folder);
                 $lif->setUrl($imageUrl);
+                $lif->setFilename($user_id);
                 
                 $lif->loadFile();
                 
                 /***************************/
                 
+                /**
+                 * Validate errors on upload process
+                 */
                 if( !$lif->isErr() ){
                     
                     $oldImage = $user->getImage() ? $user->getImage() : null;
                     //$baseurl = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath();
                     $image_local_url = $this->getUserImageFullUrl($request,$lif->getFilename()) ;
+                    
                     $user->setImage($lif->getFilename());
                     $em->persist($user);
                     $em->flush();
                     $oldFullPath=$this->getUserImageFullpath($oldImage);
                     
-                    file_exists($oldImage) && unlink($oldImage);
+                    /**
+                     * If exists was previus file,and  different of current file, delete it
+                     */
+                    !($lif->getFilename() === $oldImage) && file_exists($this->getUserImageFullpath($oldImage)) && unlink($this->getUserImageFullpath($oldImage));
                     
                     $logger->debug(sprintf('%s:%s HAS FOUND AND UPDATED RECORD [Id:%s] [UserId:%s] [File:%s] [Url:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user->getId(),$lif->getFilename(),$lif->getUrl()));
                     $respStatus = Response::HTTP_OK;
@@ -317,7 +324,7 @@ class UserController extends Controller
                     $logger->error(sprintf('%s:%s FILE UPLOAD ERROR [Id:%s] [UserID:%s] [ErrMsg:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id,$lif->getErr()));
                     $respStatus = Response::HTTP_INTERNAL_SERVER_ERROR;
                     $data= array(
-                        'message' => sprintf('SORRY, BUT ID IS INVALID [Id:%s] [UserId:%s]',$this->trxId,$user_id)
+                        'message' => sprintf('SORRY, FILE UPLOAD ERROR [Id:%s] [UserId:%s] [ErrMsg:%s]',$this->trxId,$user_id,$lif->getErr())
                     );
                 }
             }

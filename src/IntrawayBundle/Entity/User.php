@@ -39,17 +39,9 @@ class User
     /**
      * @var string
      *
-     * @ORM\Column(name="image_url", type="string", length=255, nullable=true)
+     * @ORM\Column(name="image", type="string", length=255, nullable=true)
      */
-    private $imageUrl;
-
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="image_path", type="string", length=255, nullable=true)
-     */
-    private $imagePath;
-
+    private $image;
 
     /**
      * Get id
@@ -114,51 +106,24 @@ class User
     /**
      * Set imageUrl
      *
-     * @param string $imageUrl
+     * @param string $image
      *
      * @return User
      */
-    public function setImageUrl($imageUrl)
+    public function setImage($image)
     {
-        if( PatternValidation::validateUrlPattern($imageUrl)){
-            $this->imageUrl = $imageUrl;
-        }
+        $this->image = $image;
 
         return $this;
     }
 
     /**
-     * Get imageUrl
+     * Get image
      *
      * @return string
      */
-    public function getImageUrl()
+    public function getImage()
     {
-        return $this->imageUrl;
-    }
-
-    /**
-     * Set imagePath
-     *
-     * @param string $imagePath
-     *
-     * @return User
-     */
-    public function setImagePath($imagePath)
-    {
-        $this->imagePath = $imagePath;
-
-        return $this;
-    }
-
-    /**
-     * Get imagePath
-     *
-     * @return string
-     */
-    public function getImagePath()
-    {
-        return $this->imagePath;
+        return $this->image;
     }
 }
-
