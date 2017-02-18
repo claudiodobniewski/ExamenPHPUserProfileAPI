@@ -8,7 +8,8 @@ imports:
 # http://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
 parameters:
     locale: en
-    upload_files: '%kernel.root_dir%/../var/uploads/user/pictures'
+    base_web_rootdir: '%kernel.root_dir%/../web'
+    upload_files: '/bundles/IntrawayBundle/uploadUserImages/'
 
 framework:
     #esi:             ~
@@ -74,3 +75,23 @@ swiftmailer:
     username:  "%mailer_user%"
     password:  "%mailer_password%"
     spool:     { type: memory }
+
+#services:
+#    monolog.formatter.session_request:
+#        class: Monolog\Formatter\LineFormatter
+#        arguments:
+#            - "[%%datetime%%] [%%extra.token%%] %%channel%%.%%level_name%%: %%message%% %%context%% %%extra%%\n"
+#
+#    monolog.processor.session_request:
+#        class: IntrawayBundle\Tools\SessionRequestProcessor
+#        arguments:  ['@session']
+#        tags:
+#            - { name: monolog.processor, method: processRecord }
+#
+#monolog:
+#    handlers:
+#        main:
+#            type: stream
+#            path: '%kernel.logs_dir%/%kernel.environment%.log'
+#            level: debug
+#            formatter: monolog.formatter.session_request
