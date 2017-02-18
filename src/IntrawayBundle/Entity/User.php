@@ -3,6 +3,7 @@
 namespace IntrawayBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use IntrawayBundle\Tools\validation\PatternValidation;
 
 /**
  * User
@@ -93,7 +94,9 @@ class User
      */
     public function setEmail($email)
     {
-        $this->email = $email;
+        if( PatternValidation::validateEmailPattern($email)){
+            $this->email = $email;
+        }
 
         return $this;
     }
@@ -117,7 +120,9 @@ class User
      */
     public function setImageUrl($imageUrl)
     {
-        $this->imageUrl = $imageUrl;
+        if( PatternValidation::validateUrlPattern($imageUrl)){
+            $this->imageUrl = $imageUrl;
+        }
 
         return $this;
     }

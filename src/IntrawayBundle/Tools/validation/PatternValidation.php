@@ -10,7 +10,7 @@ class PatternValidation{
      * @param String $url
      * @return boolean
      */
-    public static function valdateUrlPattern($url){
+    public static function validateUrlPattern($url){
         $validate = false;
         if (!filter_var($url, FILTER_VALIDATE_URL) === false) {
             $validate = true;
@@ -23,7 +23,7 @@ class PatternValidation{
      * @param String $email
      * @return boolean
      */
-    public static function valdateEmailPattern($email){
+    public static function validateEmailPattern($email){
         $validate = false;
         if (!filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
             $validate = true;

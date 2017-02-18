@@ -39,7 +39,7 @@ class LoadFile{
     
     public function setUrl( $url){
         
-        if( PatternValidation::valdateUrlPattern($url)){
+        if( PatternValidation::validateUrlPattern($url)){
             $this->url = $url;
         }
         
