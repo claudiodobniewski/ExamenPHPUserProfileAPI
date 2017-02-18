@@ -12,8 +12,7 @@ use IntrawayBundle\Entity as ibe;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Tools\file\upload\LoadImageFile;
-use Tools\file\upload\LoadFile;
+use IntrawayBundle\Tools\file\upload as tfu;
 
 class UserController extends Controller
 {
@@ -216,6 +215,7 @@ class UserController extends Controller
      */
     public function loadPictureAction($user_id = 0,$picture_url = null)
     {
+        /** @var Logger $logger */
         $logger = $this->get('logger');
         $respStatus = Response::HTTP_INTERNAL_SERVER_ERROR;
         $request = Request::createFromGlobals();
@@ -227,11 +227,13 @@ class UserController extends Controller
         
         if(filter_var($user_id , FILTER_VALIDATE_INT) && $user_id > 0 ){
             $logger->debug(sprintf('%s:%s RECEIVED INT [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
+            
+            
             /** @var src/IntrawayBundle\Entity\User $user */
             $user = $this->getDoctrine()
             ->getRepository('UserBundle:User')
             ->find($user_id);
-            var_dump($user,$imageUrl);
+            //var_dump($user,$imageUrl);
             if (!$user ) {
                 $logger->error(sprintf('%s:%s NOT FOUND RECORD [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
                 $respStatus = Response::HTTP_NOT_FOUND;
@@ -247,22 +249,21 @@ class UserController extends Controller
                 );
                 
             }else{
+                $logger->debug(sprintf('%s:%s PRE-PROCESS UPLOAD [Id:%s]',__CLASS__,__FUNCTION__,$user_id));
                 /* @TODO logic for iNSERT new RECORD whit ID = $user_id
-                 * Hay que implemetar
-                 * VALIDACION URL  IMAGENES (PATTERN y disponibilidad)
-                 * UPLOAD de la imagen a disco (tipo de imagen, tamaño, guardado en disco y asignacion del fullpath
-                 *
+                 * Hay que implemetar borrado de la imagen anterior si se reemplaza
                  */
+                
+                
+                
                 $em = $this->getDoctrine()->getManager();
-                if($imageUrl) $user->setImageUrl($imageUrl);
-                $em->persist($user);
-                $em->flush();
+                
                 
                 /** UPLOAD IMAGE FROM URL **/
                 
                 $upload_folder = $this->container->getParameter('upload_files');
                 
-                $lif = new LoadImageFile();
+                $lif = new tfu\LoadImageFile();
                 $lif->setUploadForlder($upload_folder);
                 $lif->setUrl($imageUrl);
                 
@@ -271,8 +272,17 @@ class UserController extends Controller
                 /***************************/
                 
                 if( !$lif->isErr() ){
+                    
+                    $oldImageUrl = $user->getImageUrl() ? $user->getImageUrl() : null;
+                    $oldImagePath = $user->getImagePath() ? $user->getImagePath() : null;
+                    $user->setImageUrl($imageUrl);
                     $user->setImagePath($lif->getFilename());
-                    $logger->debug(sprintf('%s:%s HAS FOUND AND UPDATED RECORD [Id:%s] [Name:%s]',__CLASS__,__FUNCTION__,$user->getId(),$user->getName()));
+                    $em->persist($user);
+                    $em->flush();
+                    $oldFullPath=$upload_folder.DIRECTORY_SEPARATOR.$oldImagePath;
+                    file_exists($oldFullPath) && unlink($upload_folder.DIRECTORY_SEPARATOR.$oldImagePath);
+                    
+                    $logger->debug(sprintf('%s:%s HAS FOUND AND UPDATED RECORD [Id:%s] [File:%s] [Url:%s]',__CLASS__,__FUNCTION__,$user->getId(),$lif->getFilename(),$lif->getUrl()));
                     $respStatus = Response::HTTP_OK;
                     
                     $data = array(
@@ -282,9 +292,8 @@ class UserController extends Controller
                         'Image' => $user->getImageUrl()
                     );
                 }else{
-                    $respStatus = Response::HTTP_INTERNAL_SERVER_ERROR;
-                    
                     $logger->error(sprintf('%s:%s FILE UPLOAD ERROR [Id:%s] [ErrMsg:%s]',__CLASS__,__FUNCTION__,$user_id,$lif->getErr()));
+                    $respStatus = Response::HTTP_INTERNAL_SERVER_ERROR;
                     $data= array(
                         'message' => sprintf('SORRY, BUT ID IS INVALID [Id:%s]',$user_id)
                     );
