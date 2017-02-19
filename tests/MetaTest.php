@@ -14,15 +14,6 @@ class MetaTest extends \PHPUnit_Framework_TestCase
      */
     public function setUp()
     {
-        // Attempt to look for the PSR-2 linter on the command path.
-        // Downloadable from http://get.sensiolabs.org/php-cs-fixer.phar.
-        foreach ($this->commands as $command) {
-            $this->command = trim(shell_exec("which $command"));
-            if ($this->command) {
-                return;
-            }
-        }
-        $this->command = 'php /home/claudio/devel/PHP/php-cs-fixer';
         $this->command = 'vendor/bin/php-cs-fixer';
     }
 
@@ -41,7 +32,7 @@ class MetaTest extends \PHPUnit_Framework_TestCase
 
         // Let's check PSR-2 compliance for our code, our tests and our index.php
         // Add any other pass you want to test to this array.
-        foreach (array("src/", "tests/", "web/index.php") as $path) {
+        foreach (array("src/", "tests/", "web/app.php","web/app_dev.php") as $path) {
             // Run linter in dry-run mode so it changes nothing.
             exec(
                 "$this->command fix --rules=@PSR2 --dry-run --diff "
