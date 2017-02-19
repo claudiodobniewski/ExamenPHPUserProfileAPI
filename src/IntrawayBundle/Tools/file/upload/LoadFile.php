@@ -3,7 +3,8 @@ namespace IntrawayBundle\Tools\file\upload;
 
 use IntrawayBundle\Tools\validation\PatternValidation;
 
-class LoadFile{
+class LoadFile
+{
     
     /**
     * Image source from...
@@ -28,18 +29,18 @@ class LoadFile{
     /**
      * Error message, String value only if have an error, else false.
      * Only give the last error message.
-     * 
+     *
      * @var String
      */
     private $err = false;
     
-    function __construct(){
-    
+    public function __construct()
+    {
     }
     
-    public function setUrl( $url){
-        
-        if( PatternValidation::validateUrlPattern($url)){
+    public function setUrl($url)
+    {
+        if (PatternValidation::validateUrlPattern($url)) {
             $this->url = $url;
         }
         
@@ -47,21 +48,22 @@ class LoadFile{
     }
     
     /**
-     * 
+     *
      * @return String
      */
-    public function getUrl(){
+    public function getUrl()
+    {
         return $this->url;
     }
     
     /**
-     * 
+     *
      * @param String $uploadFolder
-     * @return 
+     * @return
      */
-    public function setUploadForlder( $uploadFolder){
-
-        if( $uploadFolder){
+    public function setUploadForlder($uploadFolder)
+    {
+        if ($uploadFolder) {
             $this->uploadFolder = $uploadFolder;
         }
     
@@ -72,17 +74,18 @@ class LoadFile{
      *
      * @return String
      */
-    public function getUploadFoler(){
+    public function getUploadFoler()
+    {
         return $this->uploadFolder;
     }
     
     /**
-     * 
+     *
      * @param String $filename
      * @return \Tools\file\upload\LoadFile
      */
-    public function setFilename( $filename){
-    
+    public function setFilename($filename)
+    {
         $this->fileName = $filename;
     
         return $this;
@@ -92,17 +95,18 @@ class LoadFile{
      *
      * @return String
      */
-    public function getFilename(){
+    public function getFilename()
+    {
         return $this->fileName;
     }
     
     /**
-     * 
+     *
      * @param String $err
      * @return \Tools\file\upload\LoadFile
      */
-    protected function setErr( $err){
-    
+    protected function setErr($err)
+    {
         $this->err = $err;
     
         return $this;
@@ -112,7 +116,8 @@ class LoadFile{
      *
      * @return String || false
      */
-    public function getErr(){
+    public function getErr()
+    {
         return $this->err;
     }
     
@@ -120,57 +125,58 @@ class LoadFile{
      *  TRUE if any error occurs,false otherwise
      * @return boolean
      */
-    public function isErr(){
+    public function isErr()
+    {
         return !$this->err === false;
     }
     
     /**
      * Reset error status
      */
-    public function resetErr(){
+    public function resetErr()
+    {
         $this->err = false;
     }
     
     /**
      * @return \Tools\file\upload\LoadFile
      */
-    public function loadFile(){
-        
-        if(!$this->isErr() && !is_null($this->url) && !is_null($this->uploadFolder) ){
-            
-            if(!$this->getFilename())
-                $this->setFilename( md5(uniqid()).'.'.pathinfo($this->getUrl(), PATHINFO_EXTENSION) );
-            else{
+    public function loadFile()
+    {
+        if (!$this->isErr() && !is_null($this->url) && !is_null($this->uploadFolder)) {
+            if (!$this->getFilename()) {
+                $this->setFilename(md5(uniqid()).'.'.pathinfo($this->getUrl(), PATHINFO_EXTENSION));
+            } else {
                 $this->setFilename($this->getFilename().'.'.pathinfo($this->getUrl(), PATHINFO_EXTENSION));
             }
                 
             $upload_folder_ready = is_dir($this->getUploadFoler());
             //echo $this->getUploadFoler();exit();
-            if(!$upload_folder_ready){
-                $upload_folder_ready = mkdir($this->getUploadFoler(),0755, true);
+            if (!$upload_folder_ready) {
+                $upload_folder_ready = mkdir($this->getUploadFoler(), 0755, true);
             }
                 
             
-            if(
+            if (
                 $upload_folder_ready &&
                 is_dir($this->getUploadFoler()) &&
-                is_writable($this->getUploadFoler()) ){
-                if(!file_put_contents($this->getFullpath(), file_get_contents($this->getUrl()))){
+                is_writable($this->getUploadFoler())) {
+                if (!file_put_contents($this->getFullpath(), file_get_contents($this->getUrl()))) {
                     $this->setErr('FAILED UPLOAD FILE FROM ['.$this->getUrl().']');
                 }
-                if(!file_exists($this->getFullpath()) ){
+                if (!file_exists($this->getFullpath())) {
                     $this->setErr('POST UPLOAD CHECK: NEW FILE NOT FOUND ['.$this->$this->getFullpath().']');
                 }
-            }else{
+            } else {
                 $this->setErr('UPLOAD FOLDER VALIDATION ERROR ['.$this->getUploadFoler().']');
             }
-            
         }
         
         return $this;
     }
     
-    public function getFullpath(){
+    public function getFullpath()
+    {
         return $this->getUploadFoler().DIRECTORY_SEPARATOR.$this->getFilename();
     }
 }

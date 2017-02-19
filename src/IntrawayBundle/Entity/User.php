@@ -86,7 +86,7 @@ class User
      */
     public function setEmail($email)
     {
-        if( PatternValidation::validateEmailPattern($email)){
+        if (PatternValidation::validateEmailPattern($email)) {
             $this->email = $email;
         }
 

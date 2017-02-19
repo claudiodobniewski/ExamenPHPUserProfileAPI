@@ -1,12 +1,14 @@
 <?php
 namespace IntrawayBundle\Tools;
 
-class ControllerHelper{
+class ControllerHelper
+{
     
     /**
      * @return string - length 13 random hexa chars
      */
-    public static function getRandomId(){
+    public static function getRandomId()
+    {
         return uniqid(dechex(rand()));
     }
 }
