@@ -75,22 +75,23 @@ class UserController extends Controller
             ->find($user_id);
             
             if (!$user) {
-                $logger->error(sprintf('%s:%s NOT FOUND [Id:%s] [UserId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
+                $logger->error(sprintf('%s:%s NOT FOUND USER [Id:%s] [UserId:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id));
                 /*
                 throw $this->createNotFoundException(
                     'No product found for id '.$user_id
                     );
                     */
-                $respStatus = Response::HTTP_NO_CONTENT;
-                $data= array('message' => sprintf('NOT FOUND [Id:%s] [UserId:%s]',$this->trxId,$user_id) );
+                $respStatus = Response::HTTP_NOT_FOUND;
+                $data= array('message' => sprintf('NOT FOUND USER [Id:%s] [UserId:%s]',$this->trxId,$user_id) );
             }else{
                 $logger->debug(sprintf('%s:%s HAS FOUND [Id:%s] [UserId:%s] [Name:%s]',__CLASS__,__FUNCTION__,$user->getId(),$this->trxId,$user->getName()));
                 $respStatus = Response::HTTP_OK;
+                $image = $user->getImage() ? $this->getUserImageFullUrl($request, $user->getImage()) : null;
                 $data = array(
                     'id'=> $user->getId(),
                     'name' => $user->getName(),
                     'email' => $user->getEmail(),
-                    'Image' => $this->getUserImageFullUrl($request, $user->getImage())
+                    'Image' => $image
                 );
             }
         }else{
@@ -137,11 +138,12 @@ class UserController extends Controller
                     $this->trxId,$user->getId(),$user->getName(),$user->getEmail(),$user->getImage()));
                 $respStatus = Response::HTTP_OK;
                 
+                $image = $user->getImage() ? $this->getUserImageFullUrl($request, $user->getImage()) : null;
                 $data = array(
                     'id'=> $user->getId(),
                     'name' => $user->getName(),
                     'email' => $user->getEmail(),
-                    'Image' => $this->getUserImageFullUrl($request, $user->getImage())
+                    'Image' => $image
                 );
             }
         }else{
@@ -211,12 +213,13 @@ class UserController extends Controller
                 $em->flush();
                 $logger->debug(sprintf('%s:%s HAS FOUND AND UPDATED RECORD [Id:%s] [UserId:%s] [Name:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user->getId(),$user->getName()));
                 $respStatus = Response::HTTP_OK;
+                $image = $user->getImage() ? $this->getUserImageFullUrl($request, $user->getImage()) : null;
                 
                 $data = array(
                     'id'=> $user->getId(),
                     'name' => $user->getName(),
                     'email' => $user->getEmail(),
-                    'Image' => $this->getUserImageFullUrl($request,$user->getImage())
+                    'Image' => $image
                 );
             }
         }else{
@@ -312,13 +315,14 @@ class UserController extends Controller
                     
                     $logger->debug(sprintf('%s:%s HAS FOUND AND UPDATED RECORD [Id:%s] [UserId:%s] [File:%s] [Url:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user->getId(),$lif->getFilename(),$lif->getUrl()));
                     $respStatus = Response::HTTP_OK;
-                    
+                    $image = $user->getImage() ? $this->getUserImageFullUrl($request, $lif->getFilename()) : null;
                     //var_dump($this->getUserImageFullpath($lif->getFilename()),$this->getUserImageFullUrl($request,$lif->getFilename()));
+                    
                     $data = array(
                         'id'=> $user->getId(),
                         'name' => $user->getName(),
                         'email' => $user->getEmail(),
-                        'Image' => $this->getUserImageFullUrl($request,$lif->getFilename()) // $user->getImageUrl()
+                        'Image' => $image
                     );
                 }else{
                     $logger->error(sprintf('%s:%s FILE UPLOAD ERROR [Id:%s] [UserID:%s] [ErrMsg:%s]',__CLASS__,__FUNCTION__,$this->trxId,$user_id,$lif->getErr()));
