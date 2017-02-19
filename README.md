@@ -12,6 +12,8 @@ Example of API REST implemented over PHP Symfony/doctrine/composer
 
 Develope on PHP 5.6.21 and Symfony 3.2.3, ORM Doctrine for Linux, test over Ubuntu 14.10
 
+Powered by github.com
+
 Require software: 
 
 git
@@ -79,6 +81,10 @@ $ composer update
 NOTE: if you have xdebug enable on your PHP, and get an fatal error "proc_open(): fork failed - Cannot allocate memory", please disable xdebug (http://stackoverflow.com/questions/8754826/how-to-disable-xdebug ) while composer installs the asset, and close web browser or another memory eater app, an run composer again.
 
 **8) configure database**  
+
+*You need a database , and grant ALL PERMS (global) to user, or create you the database and grant all perms over the database (lower risk)*
+
+I use Mysql, but you can configure other.
 
 set production database on  
 app/config/parameters.yml  
@@ -153,21 +159,21 @@ The field Id is different on each request, and you can found on logs, use this f
 
 If process end OK, the Json document contain the current status on table, except DELETE what describe the record before erase.
 
-Action: GET  
+>Action: GET  
 Use: to get a record  
 Http Method: GET  
 Path: /userProfile/{USER_ID}  ej /userProfile/3
 Params: no  
 Response: a Json doc,example  {"id":2,"name":"pedro artrero","email":"anagutierrez@gmail.com","Image":"http:\/\/localhost\/userprofapi\/bundles\/IntrawayBundle\/uploadUserImages\/2.jpg"}
 
-Action: DELETE  
+>Action: DELETE  
 Use: to get ERASE a record  
 Http Method: DELETE  
 Path: /userProfile/{USER_ID}  ej /userProfile/3
 Params: no  
 Response: a Json doc,example  {"id":1,"name":"Jorge Perez","email":"jorge.perez73@hotmail.com","Image":null}
 
-Action: EDIT/MODIFY  
+>Action: EDIT/MODIFY  
 Use: to update name or email  
 Http Method: PUT  
 Path: /userProfile/{USER_ID}  ej /userProfile/3
@@ -175,8 +181,7 @@ Params: name=<NEW_NAME>&email=<NEW_EMAIL>  example name=Pedro+Cortez&email=pedro
 Response: a Json doc,example  {"id":2,"name":"Pedro Cortez","email":"pedro.cortez@gmail.com","Image":"http:\/\/localhost\/userprofapi\/bundles\/IntrawayBundle\/uploadUserImages\/2.jpg"}
 NOTE: name require al least 10 chars length, and email a valid email format, other way the param is ignored. Check logs if edit no modify the record.
 
-curl -v -X PUT 'localhost/userprofapi/app_dev.php/userProfile/2/addPicture?imageUrl=https%3A%2F%2Fs-media-cache-ak0.pinimg.com%2F736x%2F43%2Fa7%2F56%2F43a75665c0b59f406f6129be67e23f5e.jpg'
-Action: UPLOAD IMAGE  
+>Action: UPLOAD IMAGE  
 Use: to load (new or replace) user profile image  
 Http Method: PUT  
 Path: /userProfile/{USER_ID}/addPicture  ej /userProfile/3/addPicture
