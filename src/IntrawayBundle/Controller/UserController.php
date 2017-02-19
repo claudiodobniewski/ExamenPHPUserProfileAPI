@@ -140,7 +140,7 @@ class UserController extends Controller
                 
                 $image = $user->getImage() ? $this->getUserImageFullUrl($request, $user->getImage()) : null;
                 $data = array(
-                    'id'=> $user->getId(),
+                    'id'=> $user_id,
                     'name' => $user->getName(),
                     'email' => $user->getEmail(),
                     'Image' => $image
@@ -308,7 +308,10 @@ class UserController extends Controller
                     /**
                      * If exists was previus file,and  different of current file, delete it
                      */
-                    !($lif->getFilename() === $oldImage) && file_exists($this->getUserImageFullpath($oldImage)) && unlink($this->getUserImageFullpath($oldImage));
+                    !($lif->getFilename() === $oldImage) && 
+                        file_exists($this->getUserImageFullpath($oldImage)) &&
+                        !is_dir($this->getUserImageFullpath($oldImage)) &&
+                        unlink($this->getUserImageFullpath($oldImage));
                     
                     $logger->debug(sprintf('%s:%s HAS FOUND AND UPDATED RECORD [Id:%s] [UserId:%s] [File:%s] [Url:%s]', __CLASS__, __FUNCTION__, $this->trxId, $user->getId(), $lif->getFilename(), $lif->getUrl()));
                     $respStatus = Response::HTTP_OK;
