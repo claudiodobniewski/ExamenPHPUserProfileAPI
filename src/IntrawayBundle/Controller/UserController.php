@@ -27,6 +27,9 @@ class UserController extends Controller
     }
     
     /**
+     * Action POST (create new user profile)
+     * NOT ALLOWED
+     *
      * @Route("/userProfile/{user_id}", name="setUser")
      * @Method({"POST"})
      */
@@ -41,7 +44,8 @@ class UserController extends Controller
     }
     
     /**
-     *
+     * Action GET user profile, return the record on Json format
+     * or json "message" key on error
      *
      * @Route("/userProfile/{user_id}", name="GetUser")
      * @Method({"GET"})
@@ -51,21 +55,6 @@ class UserController extends Controller
         $logger = $this->get('logger');
         $respStatus = Response::HTTP_INTERNAL_SERVER_ERROR;
         $request = Request::createFromGlobals();
-        //$get_id = $request->query->get('user_id');
-        /*
-        $content = $request->getContent();
-        $logger->info(sprintf('%s:%s [Body:%s]',__CLASS__,__FUNCTION__,$content ));
-
-        $encoders = array(new JsonEncoder());
-        $normalizers = array(new ObjectNormalizer());
-        //$normalizers->setIgnoredAttributes(array('imageUrl'));
-        $serializer = new Serializer($normalizers, $encoders);
-
-        //$obj = $serializer->deserialize($content,User::class,'json');
-        $obj = json_decode($content);
-        */
-        //$logger->info(sprintf('%s:%s %s [Id:%s] [Name:%s]',__CLASS__,__FUNCTION__,'GET ACTION',$obj->id,$obj->name ));
-        
         
         if (filter_var($user_id, FILTER_VALIDATE_INT) && $user_id > 0) {
             $logger->debug(sprintf('%s:%s RECEIVED INT [Id:%s] [UserdId:%s]', __CLASS__, __FUNCTION__, $this->trxId, $user_id));
@@ -76,11 +65,6 @@ class UserController extends Controller
             
             if (!$user) {
                 $logger->error(sprintf('%s:%s NOT FOUND USER [Id:%s] [UserId:%s]', __CLASS__, __FUNCTION__, $this->trxId, $user_id));
-                /*
-                throw $this->createNotFoundException(
-                    'No product found for id '.$user_id
-                    );
-                    */
                 $respStatus = Response::HTTP_NOT_FOUND;
                 $data= array('message' => sprintf('NOT FOUND USER [Id:%s] [UserId:%s]', $this->trxId, $user_id) );
             } else {
@@ -103,6 +87,10 @@ class UserController extends Controller
     }
     
     /**
+     * Erase a record
+     * Return the erased record on json format
+     * or json "message" key on error
+     *
      * @Route("/userProfile/{user_id}", name="DeleteUser")
      * @Method({"DELETE"})
      */
@@ -158,6 +146,12 @@ class UserController extends Controller
     }
     
     /**
+     * Action UPDATE user profile, fields "name" and/or "email",
+     *
+     * PRE: name require at least 10 chars, email validates the format
+     * POST: return the record on Json format
+     * or json "message" key on error
+     *
      * @Route("/userProfile/{user_id}", name="EditUser")
      * @Method({"PUT"})
      */
@@ -234,6 +228,13 @@ class UserController extends Controller
     }
     
     /**
+     * Get an images URL, and try upload it into upload project folder.
+     * Replace older user profile image if is.
+     *
+     * PRE: imageUrl require, validates the format, ending in .jpg, .png or .gif (case insensitive)
+     * POST: return the record on Json format
+     * or json "message" key on error
+     *
      * @Route("/userProfile/{user_id}/addPicture", name="AddUserPicture")
      * @Method({"PUT"})
      */
@@ -271,9 +272,6 @@ class UserController extends Controller
                 );
             } else {
                 $logger->debug(sprintf('%s:%s PRE-PROCESS UPLOAD [Id:%s] [UserId:%s]', __CLASS__, __FUNCTION__, $this->trxId, $user_id));
-                /* @TODO logic for iNSERT new RECORD whit ID = $user_id
-                 * Hay que implemetar borrado de la imagen anterior si se reemplaza
-                 */
                 
                 $em = $this->getDoctrine()->getManager();
                 
@@ -308,7 +306,7 @@ class UserController extends Controller
                     /**
                      * If exists was previus file,and  different of current file, delete it
                      */
-                    !($lif->getFilename() === $oldImage) && 
+                    !($lif->getFilename() === $oldImage) &&
                         file_exists($this->getUserImageFullpath($oldImage)) &&
                         !is_dir($this->getUserImageFullpath($oldImage)) &&
                         unlink($this->getUserImageFullpath($oldImage));
@@ -344,6 +342,8 @@ class UserController extends Controller
     }
     
     /**
+     * return canonical fullpath to upload image folder for $imageFilename given
+     * used for write and delete image profile files
      *
      * @param string $imageFilename
      * @return string
@@ -357,6 +357,8 @@ class UserController extends Controller
     }
     
     /**
+     * return URL to access the user profile image
+     * used for image profile asset
      *
      * @param Request $request
      * @param string $imageFilename
