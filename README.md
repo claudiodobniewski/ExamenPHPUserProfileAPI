@@ -191,20 +191,20 @@ If the policy of names of upload files change on the future, or new image have a
 
 ## Tests
 
-The tests are only examples of unit tests, funcional test and code validation test
+The tests are only examples of unit tests, funcional test and code validation test  
 
-Run all tests
-vendor/bin/phpunit -c ./phpunit.xml
+Run all tests  
+vendor/bin/phpunit -c ./phpunit.xml  
 
-Run only some test
-vendor/bin/phpunit -c ./phpunit.xml <FILE OR FOLDER>
+Run only some test  
+vendor/bin/phpunit -c ./phpunit.xml <FILE OR FOLDER>  
 
 ## References
 
 About Symfony  http://symfony.com  
 About Symfony Doctrine http://symfony.com/doc/current/doctrine.html  
 About REST API http://asiermarques.com/2013/conceptos-sobre-apis-rest/  
-About PSR-2  
+About PSR-2 http://www.php-fig.org/psr/psr-2/  
 About PSR-3 Monolog (Symfony logger) compliance https://www.loggly.com/ultimate-guide/php-logging-libraries/  
 About PSR-4 https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-4-autoloader.md and https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md  
 
